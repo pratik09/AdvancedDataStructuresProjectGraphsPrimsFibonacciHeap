@@ -1,7 +1,7 @@
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
-#include <algorithm> 
+#include <algorithm>
 #include <vector>
 #include <list>
 #include <fstream>
@@ -15,9 +15,9 @@
 #include <math.h>
 #include <sstream>
 
-
 using namespace std;
 
+//Class to store a vertex and its corresponding key, which is used in Prim's using Fibonacci Heap
 class VertexKey
 {
   public:
@@ -31,16 +31,14 @@ class VertexKey
    }
 };
 
+//Class For a Fibonacci Heap Node
 class FibonacciHeapNode
 {
    public:
 
      int degree;
      FibonacciHeapNode *child;
-
-     //Specific for Prim's Application of Fibonacci Heap
-     VertexKey *data;
-
+     VertexKey *data;                       //Vertex and its Key
      FibonacciHeapNode *right;
      FibonacciHeapNode *left;
      FibonacciHeapNode *parent;
@@ -59,6 +57,7 @@ class FibonacciHeapNode
           childCut=false;
        }
 
+     //Prints the node
      void print()
        {
           cout<<endl;
@@ -74,12 +73,13 @@ class FibonacciHeapNode
        }
 };
 
+//Fibonacci Heap
 class FibonacciHeap
 {
    public:
 
      int numberOfNodes;
-     FibonacciHeapNode *min;
+     FibonacciHeapNode *min;                //Points minimum node in heap
 
      FibonacciHeap()
        {
@@ -87,14 +87,14 @@ class FibonacciHeap
          numberOfNodes = 0;
        }
 
-     void insert(FibonacciHeapNode *node)
+     void insert(FibonacciHeapNode *node)   //Insert a new node
        {
-          if(min == NULL)
+          if(min == NULL)                   //If null, make it min
             {
               min = node;
               min->right=min->left=min;
             }
-          else
+          else                              //Else add it and update min if needed
             {
               node->right = min->right;
               node->left = min;
@@ -105,7 +105,7 @@ class FibonacciHeap
             }
        }
 
-     void print()
+     void print()                           //Print all nodes in Heap
        {
           if(min == NULL)
              {
@@ -126,6 +126,7 @@ class FibonacciHeap
                FibonacciHeapNode *visit = bfsQ.front();
                bfsQ.pop();
                visit->print();
+
                //queuing siblings
                FibonacciHeapNode *itr = visit->right;
                while(itr != visit)
@@ -133,6 +134,7 @@ class FibonacciHeap
                     bfsQForSiblings.push(itr);
                     itr = itr->right;
                  }
+
                //queuing children
                if(visit->child != NULL)
                    bfsQ.push(visit->child);
@@ -149,7 +151,7 @@ class FibonacciHeap
 
        }
 
-     //returns pointer to minimum key node in list and sets parent as NULL and childcut as false in all nodes in list
+     //returns pointer to minimum key node in list and sets parent as NULL and childcut as false in all nodes in list if specified.
      FibonacciHeapNode* minKeyNode(FibonacciHeapNode *list, bool setParentAsNull, bool setChildCutAsFalse)
        {
           FibonacciHeapNode *listitr = list->right;
@@ -177,7 +179,7 @@ class FibonacciHeap
           return minPointer;
        }
 
-     //Combines a list pointed by 
+     //Combines a list pointed by list with the top level list
      void combineListWithTopLevelList(FibonacciHeapNode *list)
        {
           if(list == NULL)
@@ -197,61 +199,60 @@ class FibonacciHeap
              min = minPointer;
        }
 
+     //Removes minimum node and returns corresponding vertex and min key
      VertexKey* removeMin()
       {
         //no min
         if(min == NULL)
           return NULL;
 
-        //Just one top level root
+        //Only one top level root
         if(min->right==min && min->left==min)
           {
-             //has no child
-             if(min->child == NULL)
+             if(min->child == NULL)         //has no child
               {
                  VertexKey* data = min->data;
-                 //destroy Node code
                  min = NULL;
                  return data;
               }
-             else  //has childs
+             else                           //has childs
               {
                  FibonacciHeapNode *minPointer = minKeyNode(min->child, true, false);
                  VertexKey *data = min->data;
                  min = minPointer;
-                 //cout<<"After remove: Before pairwise combine: "<<endl;
-                 //print();
                  pairwiseCombine();
-                 //cout<<"After Pairwise Combine: "<<endl;
-                 //print();
                  return data;
               }
           }
-        else  //More than one top level roots
+        else                                //More than one top level roots
           {
+
             //remove min from top level list
             min->left->right = min->right;
             min->right->left = min->left;
 
             FibonacciHeapNode *minTemp = min;
+
+            //Find new min of remaining siblings of min
             min = minKeyNode(minTemp->right, false, false);
-            //cout<<"After remove: Before combine with top level "<<endl;
-            //print();
+
+            //Combine childrens to top level and update min
             combineListWithTopLevelList(minTemp->child);
-            //cout<<"After Combine with top level list: Before pairwise combine: "<<endl;
-            //print();
+
+            //Perform a pairwise combine
             pairwiseCombine();
-            //cout<<"After Pairwise Combine: "<<endl;
+
             return minTemp->data;
           }
       }
 
-
+      //Pairwise Combine the top level list roots with equal degrees
       void pairwiseCombine()
         {
            vector<FibonacciHeapNode*> treeOfDegree;
            FibonacciHeapNode *itr = min;
 
+           //Store pointers to each trees
            vector<FibonacciHeapNode*> allTrees;
            allTrees.push_back(itr);
            itr = itr->right;
@@ -261,21 +262,20 @@ class FibonacciHeap
                 itr = itr->right;
              }
 
+           //Iterate through each tree
            vector<FibonacciHeapNode*>::iterator startItr = allTrees.begin();
            vector<FibonacciHeapNode*>::iterator endItr = allTrees.end();
            while(startItr != endItr)
              {
                 FibonacciHeapNode * linkedPtr = (*startItr);
                 int degree =  linkedPtr->degree;
+
+                //Run until current tree's complete combine is completed
                 while(true)
                   {
-                    //cout<<"Degree is1: "<<degree<<" Size is: "<<treeOfDegree.size();
-                    //Making Vector big enough to have max degree
+                    //Making Vector for storing per degree tree big enough to accomodate max degree
                     while(degree >= treeOfDegree.size() )
                          treeOfDegree.push_back(NULL);
-
-
-                    //cout<<"Degree is2: "<<degree<<" Size is: "<<treeOfDegree.size()<<endl;
 
                     if(treeOfDegree[degree] == NULL)
                       {
@@ -293,32 +293,31 @@ class FibonacciHeap
                 startItr++;
              }
 
-           //cout<<"After pairwise combine: Before forming root level trees fo different degree: "<<endl;
-           //print();
-
-           //create root level list with updated min pointer
+           //Create a root level list with updated min pointer from combined trees
            min = NULL;
            int minKey;
            startItr = treeOfDegree.begin();
            endItr = treeOfDegree.end();
            while(startItr != endItr)
              {
+                //If certain degree exist, add it to list
                 if( (*startItr) != NULL)
                   {
-                    //(*startItr)->print();
-                    if(min == NULL)
+                    if(min == NULL)         //If minimum is null, make this node minimum
                       {
                          min = (*startItr);
                          min->left = min->right = min;
                          minKey = (*startItr)->data->key;
                       }
-                    else
+                    else                    //If min exist
                       {
+                         //Add the tree to list
                          min->right->left = (*startItr);
                          (*startItr)->right = min->right;
                          min->right = (*startItr);
                          (*startItr)->left = min;
 
+                         //Update min pointer
                          if( (*startItr)->data->key < minKey )
                             {
                                minKey = (*startItr)->data->key;
@@ -328,12 +327,9 @@ class FibonacciHeap
                   }
                 startItr++;
              }
-          //min->print();
-          //min->right->print();
-          //print();
-          //exit(1);
         }
 
+      //Removes an arbitary node pointed by nodeToRemove and returns corresponding vertex and key
       VertexKey* removeArbitary(FibonacciHeapNode* nodeToRemove)
         {
           if(nodeToRemove == NULL)
@@ -350,31 +346,37 @@ class FibonacciHeap
                nodeToRemove->left->right = nodeToRemove->right;
                nodeToRemove->right->left = nodeToRemove->left;
 
-               //if parent points to this child;
+               //if parent points to this child, update parent's child pointer
                if(nodeToRemove->parent->child = nodeToRemove)
                  {
-                   //no siblings. Make parent->child null
+                                  //If there are no siblings, make parent->child as null
                    if(nodeToRemove->right==nodeToRemove && nodeToRemove->left==nodeToRemove)
-                     nodeToRemove->parent->child = NULL;
-                   else //has siblings
-                     nodeToRemove->parent->child = nodeToRemove->right;
+                     {
+                       nodeToRemove->parent->child = NULL;
+                     }
+                   else           //If has siblings, point parent's child to removed node's sibling
+                     {
+                       nodeToRemove->parent->child = nodeToRemove->right;
+                     }
                  }
 
-               if(firstNodeDeleted == false)
+               FibonacciHeapNode *temp;
+
+               if(firstNodeDeleted == false)                    //Combine only childrens to top level list
                  {
-                    //Merge childrens to top level list
+                    FibonacciHeapNode *temp = nodeToRemove->parent;
                     combineListWithTopLevelList(nodeToRemove->child);
                     firstNodeDeleted = true;
                  }
                else
-                 {
-                    //Merge the node itself to top level list
+                 {                                              //Combine the node algonwith childrens to top level list
                     nodeToRemove->right = nodeToRemove;
                     nodeToRemove->left = nodeToRemove;
+                    temp = nodeToRemove->parent;
                     combineListWithTopLevelList(nodeToRemove);
                  }
 
-               nodeToRemove = nodeToRemove->parent;
+               nodeToRemove = temp;
 
                if(nodeToRemove != NULL)
                   nodeToRemove->degree = nodeToRemove->degree-1;
@@ -387,6 +389,7 @@ class FibonacciHeap
            return data;
         }
 
+      //Decrease Key of a node pointed by nodeToDecreaseKey to a value pointed by new key
       void decreaseKey(FibonacciHeapNode *nodeToDecreaseKey, int newKey)
         {
            if(nodeToDecreaseKey == NULL)
@@ -395,38 +398,41 @@ class FibonacciHeap
                exit(0);
              }
 
+           //If new key is not smaller than existing key, return
            if(nodeToDecreaseKey->data->key < newKey)
              {
                cout<<"Already smaller key present: "<<endl;
                return;
              }
 
+           //Descrease key
            nodeToDecreaseKey->data->key = newKey;
 
-           //No parent. So no min tree property violation.
+           //If no parent exist than no min tree property violation and return.
            if(nodeToDecreaseKey->parent == NULL)
               return;
 
+           //If parent key is still smaller than decreased child than no min tree property violation and return.
            if( newKey >= nodeToDecreaseKey->parent->data->key )
               return;
 
            FibonacciHeapNode *nodeToRemove = nodeToDecreaseKey;
 
-           //new key is smaller than parent
+           //New key is smaller than its parent's and min tree violation. Add the node to top level list and do cascading cut
            do{
-               //remove node from list
+               //Remove node from list
                nodeToRemove->left->right = nodeToRemove->right;
                nodeToRemove->right->left = nodeToRemove->left;
 
-               //if parent points to this child;
+               //If parent points to this child, update the parent's child pointer
                if(nodeToRemove->parent->child = nodeToRemove)
                  {
-                   //no siblings. Make parent->child null
+                   //If the node has no siblings, make parent->child as null
                    if(nodeToRemove->right==nodeToRemove && nodeToRemove->left==nodeToRemove)
                      {
                         nodeToRemove->parent->child = NULL;
                      }
-                   else //has siblings
+                   else //If has siblings make parent point to sibling
                      {
                         nodeToRemove->parent->child = nodeToRemove->right;
                      }
@@ -438,20 +444,19 @@ class FibonacciHeap
                FibonacciHeapNode *temp = nodeToRemove->parent;
                combineListWithTopLevelList(nodeToRemove);
 
-
                nodeToRemove = temp;
-               //cout<<nodeToRemove<<endl;
                nodeToRemove->degree -=  1;
 
               } while(nodeToRemove->parent != NULL && nodeToRemove->childCut == true );
 
            if(nodeToRemove != NULL)
               nodeToRemove->childCut = true;
-
         }
 
+      //Make one root child of another root. Larger root becomes child of smaller root. Pointer to smaller root is returned.
       FibonacciHeapNode* linkRoots(FibonacciHeapNode *root1, FibonacciHeapNode *root2)
         {
+           //Makes root1 to have smaller root and root2 to have larger root
            if(root2->data->key < root1->data->key)
              {
                 FibonacciHeapNode *temp = root1;
@@ -459,6 +464,7 @@ class FibonacciHeap
                 root2 = temp;
              }
 
+           //If root1 has childs, add root2 to siblings list of root1's children
            if(root1->child != NULL)
              {
                root2->right = root1->child->right;
@@ -466,30 +472,30 @@ class FibonacciHeap
                root1->child->right = root2;
                root2->left = root1->child;
                root2->parent = root1;
-               root2->childCut = false;    //verify
+               root2->childCut = false;
              }
-           else
+           else                        //Just make root2 child of root1
              {
                root1->child = root2;
                root2->parent = root1;
-               root2->childCut = false;    //verify
+               root2->childCut = false;
                root2->right = root2;
                root2->left = root2;
              }
 
            root1->degree += 1;
-
            return root1;
         }
 
 };
 
+//Node structure to store edges in adjacency list of a vertex
 class EdgeNode
 {
   public:
-    int sourceVertex;
-    int destinationVertex;
-    int weight;
+    int sourceVertex;               //Vertex whose adjacency list contains this node
+    int destinationVertex;          //Vertex who is connected to source vertex
+    int weight;                     //Weight of the edge from source to destination
 
     EdgeNode(int sourceVertex, int destinationVertex, int weight)
       {
@@ -498,28 +504,13 @@ class EdgeNode
         this->weight = weight;
       }
 
-    bool operator== (EdgeNode &rhs)
+    bool operator== (EdgeNode &rhs)       //Returns true if two edge nodes are same
       {
         return( ( this->sourceVertex == rhs.sourceVertex ) && ( this->destinationVertex == rhs.destinationVertex ) && ( this->weight == rhs.weight ) );
       }
 };
 
-class PrimsNode
-{
-  public:
-    int vertex;
-    int parent;
-    int cost;
-
-  PrimsNode(int vertex, int parent, int cost)
-    {
-      this->vertex = vertex;
-      this->parent = parent;
-      this->cost = cost;
-    }
-};
-
-
+//Graph of containing vertices, their connectivity with weights of edges.
 class Graph
 {
 
@@ -527,9 +518,7 @@ class Graph
     int numberOfVertices;
     int numberOfEdges;
     vector<list<EdgeNode *> *> *adjacencyList;
-    //int totalBits = numberOfVertices * numberOfVertices;
     bool **edgePresentArray;
-    //edgePresent = new (bool*)[numberOfVertices];
 
   public:
     Graph(int numberOfVertices)
@@ -547,73 +536,72 @@ class Graph
          edgePresentArray[i] = new bool[numberOfVertices];
      }
 
+    //Re-Allocate graph
     void reAllocateListWithNewNumberOfVertices(int numberOfVertices)
      {
+       if(this->numberOfVertices > 0)
+         {
+          //delete previous adjacency list
+          for(int i=0; i< this->adjacencyList->size(); i++)
+            {
+              if( (*adjacencyList)[i] != NULL )
+                {
+                  list<EdgeNode*>::iterator strit = (*adjacencyList)[i]->begin();
+                  list<EdgeNode*>::iterator endit = (*adjacencyList)[i]->end();
+                  while(strit != endit)
+                    {
+                       if( (*strit) != NULL)
+                         delete (*strit);
+                       strit++;
+                    }
+                 delete (*adjacencyList)[i];
+                }
+            }
+          if(adjacencyList != NULL)
+          delete adjacencyList;
+         }
        this->numberOfVertices = numberOfVertices;
-       delete adjacencyList;
+
+       //Reallocate adjacency list
        adjacencyList = new vector<list<EdgeNode *> *>;
        for(int i=0; i<numberOfVertices; i++)
          {
            adjacencyList->push_back(NULL);
          }
+
+
        edgePresentArray = new bool* [numberOfVertices];
        for(int i=0;i<numberOfVertices;i++)
          edgePresentArray[i] = new bool[numberOfVertices];
      }
-/*
-    void addEdge(int row, int col)
-     {
-       size_t loc = row * numberOfVertices + col;
-       edgePresent[loc] = 1;
-     }
 
-    bool edgePresent(int row, int col)
-     {
-       size_t loc = row * numberOfVertices + col;
-       ((edgePresent[loc] == 1) ? return true : return false);
-     }
-*/
     void generateRandomGraph(int density)
      {
-        //ofstream ofs("randomGraph", std::fstream::out | std::fstream::app);
-        //stringstream line;
         srand(time(NULL));
+
+        //Total edges possible
         double totalEdgesPossible = ( ( numberOfVertices * (numberOfVertices-1 ) ) / (2.00) );
-        cout<<"Total Edges possible: "<<totalEdgesPossible<<endl;
-        //double densityD = density;
-        //double numberOfVerticesD = numberOfVertices;
+        //cout<<"Total Edges possible: "<<totalEdgesPossible<<endl;
+
+        //Number of edges to Add based on density
         double numberOfEdgesToAdd = (density/100.00) * totalEdgesPossible;
-        //line << numberOfVertices;
-        //line << " ";
-        //line << (int)numberOfEdgesToAdd;
-        //ofs.write((line.str()).c_str(), 256);
-        //ofs << '\n';
-        cout<<"Number Of Edges To Add: "<<numberOfEdgesToAdd<<endl;
-        cout<<numberOfVertices<<" "<<numberOfEdgesToAdd<<endl;
+        //cout<<"Number Of Edges To Add: "<<numberOfEdgesToAdd<<endl;
+
         double i = 0 ;
         double tryWithNoChanges = 0;
         double lastFound = false;
+
         while(i< numberOfEdgesToAdd)
           {
+             //Generate random edge and cost.
              int startVertex = rand() % numberOfVertices;
              int endVertex = rand() % numberOfVertices;
              int cost = (rand() % 1000) + 1;
-             //cout<<"Generating Edges: "<<endl;
-             //cout<<startVertex<<" "<<endVertex<<" "<<cost<<endl;
+
              bool present = edgePresentArray[startVertex][endVertex] && edgePresentArray[endVertex][startVertex];
-             if((startVertex != endVertex) && !present)//addEdge(startVertex, endVertex, cost) )
+             if((startVertex != endVertex) && !present)
                 {
-                  //stringstream lineS;
-                  //lineS << startVertex;
-                  //lineS << " ";
-                  //lineS << endVertex;
-                  //lineS << " ";
-                  //lineS << cost;
-                  //ofs.write((lineS.str()).c_str(), 256);
-                  //ofs << '\n';
                   addEdge(startVertex, endVertex, cost);
-                  //cout<<startVertex<<" "<<endVertex<<" "<<cost<<endl;
-                  //cout<<i<<endl;
                   i++;
                 }
 
@@ -623,39 +611,30 @@ class Graph
              if(lastFound && present)
                tryWithNoChanges=1;
 
+             //If no edge add since 1000 continuous tries
              if(tryWithNoChanges == 1000)
                {
-                 cout<<"Breaking.."<<endl;
-                 cout<<"Percentage Completed: "<< (i/numberOfEdgesToAdd)*100.00<<endl;
+                 //cout<<"Percentage Completed: "<< (i/numberOfEdgesToAdd)*100.00<<endl;
                  break;
                }
 
              lastFound = !present;
-             //ofs.close();
-
           }
 
-        cout<<"Number Of Edges Added: "<<i<<endl;
+        //cout<<"Number Of Edges Added: "<<i<<endl;
 
-        if(graphConnectedOrNot())
-          cout<<"Random graph is Connected: "<<endl;
-        else
-          cout<<"Random graph is not Connected: "<<endl;
      }
 
+    //Adds edge for the input startvertex, endvertex and cose and returns true on success
     bool addEdge(int startVertex, int endVertex, int cost)
        {
-    //     if(edgePresent(startVertex, endVertex))
-    //        return  false;
-
-    //     if(edgePresentArray[startVertex][endVertex])
-    //          return false;
-
          edgePresentArray[startVertex][endVertex] = edgePresentArray[endVertex][startVertex] = true;
 
+         //Create edge node for adjacency list of start vertex and end vertex each
          EdgeNode *forStartVertexList = new EdgeNode(startVertex, endVertex, cost);
          EdgeNode *forEndVertexList = new EdgeNode(endVertex, startVertex, cost);
 
+         //If adjacency list for start vertex does not exist, add it and add edge
          if( (*adjacencyList)[startVertex] == NULL )
             {
                list<EdgeNode *> *newList = new list<EdgeNode *>();
@@ -665,6 +644,7 @@ class Graph
          else
             (*adjacencyList)[startVertex]->push_back(forStartVertexList);
 
+         //If adjacency list for start vertex does not exist, add it and add edge
          if( (*adjacencyList)[endVertex] == NULL )
             {
                list<EdgeNode *> *newList = new list<EdgeNode *>();
@@ -675,14 +655,15 @@ class Graph
             (*adjacencyList)[endVertex]->push_back(forEndVertexList);
 
          numberOfEdges++;
-
          return true;
        }
 
+    //Returns true if edge is present in adjacency list of start and end vertex
     bool edgePresent(int start, int end)
        {
          if( (*adjacencyList)[start] != NULL && (*adjacencyList)[end] != NULL)
            {
+             //Finds in start vertex list
              bool result1 = false;
              list<EdgeNode *>::iterator startItr1 = (*adjacencyList)[start]->begin();
              list<EdgeNode *>::iterator endItr1 = (*adjacencyList)[start]->end();
@@ -693,6 +674,7 @@ class Graph
                   startItr1++;
                }
 
+             //Finds in start vertex list
              bool result2 = false;
              list<EdgeNode *>::iterator startItr2 = (*adjacencyList)[end]->begin();
              list<EdgeNode *>::iterator endItr2 = (*adjacencyList)[end]->end();
@@ -702,7 +684,7 @@ class Graph
                     result2 = true;
                   startItr2++;
                }
-             //cout<<"result1: "<<result1<<"result2: "<<result2<<endl;
+
              return (result1 && result2);
            }
          else
@@ -711,6 +693,7 @@ class Graph
            }
        }
 
+    //Returns true if graph is connected by performing Breadth First Search on graph.
     bool graphConnectedOrNot()
        {
           queue<int> verticesQ;
@@ -718,18 +701,17 @@ class Graph
           for(int i=0; i<numberOfVertices; i++)
             verticesVisited[i] = false;
 
+          //Choose random start vertex
           srand(time(NULL));
           int sourceVertex = rand() % numberOfVertices;
-          cout<<"Source Vertex: "<<sourceVertex<<endl;
 
           while((*adjacencyList)[sourceVertex] == NULL)
                sourceVertex = rand() % numberOfVertices;
 
-          cout<<"Source Vertex: "<<sourceVertex<<endl;
-
           verticesQ.push(sourceVertex);
           verticesVisited[sourceVertex] = true;
 
+          //Perform Breadth First Search
           while(!verticesQ.empty())
             {
                 int currentV = verticesQ.front();
@@ -747,6 +729,7 @@ class Graph
                   }
             }
 
+          //If any node is unconnected return false
           for(int i=0; i<numberOfVertices; i++)
             if(verticesVisited[i] == false)
               return false;
@@ -754,12 +737,14 @@ class Graph
           return true;
        }
 
+     //Generate a minimum Spanning Tree by Prims algorithm using a simple Array
      void getMinimumSpanningTreeUsingPrimsSimpleScheme(string filepath)
        {
-          int key[numberOfVertices];
-          int parent[numberOfVertices];
-          bool vertexAdded[numberOfVertices];
+          int key[numberOfVertices];               //Stores the current minimum edge weight to each vertex
+          int parent[numberOfVertices];            //Stores the vertex from which the minimum edge to each vertex exists
+          bool vertexAdded[numberOfVertices];      //Stroes if the vertex is added to spanning tree yet
           list<int> currentTree;
+
           for(int i=0; i<numberOfVertices; i++)
             {
                key[i]=2000;
@@ -767,20 +752,14 @@ class Graph
                vertexAdded[i]= false;
             }
 
-          //list<PrimsNode *> list;
-          //for(int i=0; i<numberOfVertices; i++)
-          //  {
-          //    PrimsNode *temp = new PrimsNode(i, -1, 2000);
-          //    list.push_back(temp);
-          //  }
-          //(*list.front())->cost = 0;
-
           key[0]=0;
 
           while(currentTree.size() < numberOfVertices)
             {
                int minVertex= -1;
                int minKey= 3000;
+
+               //Remove min for Prim's by tracersing the entire array
                for(int i=0; i<numberOfVertices; i++)
                  {
                     if( vertexAdded[i]==false && key[i]<minKey )
@@ -792,6 +771,7 @@ class Graph
                vertexAdded[minVertex] = true;
                currentTree.push_back(minVertex);
 
+               //Relax the all adjacent nodes to minimum node
                list<EdgeNode*>::iterator startItr = (*adjacencyList)[minVertex]->begin();
                list<EdgeNode*>::iterator endItr = (*adjacencyList)[minVertex]->end();
                while(startItr != endItr)
@@ -805,17 +785,25 @@ class Graph
                  }
             }
 
+            //Calculate cost of minimum spanning tree
             int minimumCostSpanningTree = 0;
+            stringstream edges;
+            bool skipfirst = true;
             while(currentTree.size() != 0)
               {
                  int vertex = currentTree.front();
                  minimumCostSpanningTree += key[vertex];
-                 //cout<<parent[vertex]<<" "<<vertex<<endl;
+                 if(!skipfirst)
+                   edges << parent[vertex] << " " << vertex << endl;
+                 else
+                   skipfirst = false;
                  currentTree.pop_front();
               }
-           cout<<endl<<"Minimum Cost : "<<minimumCostSpanningTree<<endl;
+           cout<<minimumCostSpanningTree<<endl;
+           cout<<edges.str();
        }
 
+     //Generate a minimum Spanning Tree by Prims algorithm using a Fibonacci Heap
      void getMinimumSpanningTreeUsingPrimsFibonacciScheme(string filepath)
        {
           vector<FibonacciHeapNode*> pointers;
@@ -843,7 +831,9 @@ class Graph
 
           while(currentTree.size() < numberOfVertices)
             {
+               //Remove Min operation on fibonacci Heap for minimum key
                min = heap.removeMin();
+
                vertexAdded[min->vertex] = true;
                currentTree.push_back(min->vertex);
 
@@ -853,6 +843,7 @@ class Graph
                  {
                     if( (vertexAdded[(*startItr)->destinationVertex] == false) && ( (*startItr)->weight < key[(*startItr)->destinationVertex] ) )
                        {
+                          //Decrease key operation for fibonacci Heap for adjacent vertices of min node
                           heap.decreaseKey(pointers[(*startItr)->destinationVertex], (*startItr)->weight);
                           key[(*startItr)->destinationVertex] = (*startItr)->weight;
                           parent[(*startItr)->destinationVertex] = min->vertex;
@@ -861,19 +852,25 @@ class Graph
                  }
             }
 
+            //Calculate minimum spanning tree cost
             int minimumCostSpanningTree = 0;
+            stringstream edges;
+            bool skipfirst = true;
             while(currentTree.size() != 0)
               {
                  int vertex = currentTree.front();
                  minimumCostSpanningTree += key[vertex];
-                 //cout<<parent[vertex]<<" "<<vertex<<endl;
+                 if(!skipfirst)
+                   edges << parent[vertex] << " " << vertex << endl;
+                 else
+                   skipfirst = false;
                  currentTree.pop_front();
               }
-           cout<<endl<<"Minimum Cost : "<<minimumCostSpanningTree<<endl;
-
+           cout<<minimumCostSpanningTree<<endl;
+           cout<<edges.str();
        }
 
-
+     //Generate grpah from reading a file
      bool generateGraphFromFile(string filePath)
        {
           ifstream ifs(filePath.c_str(), std::fstream::in);
@@ -892,11 +889,12 @@ class Graph
 
           int counter=0, startVertex, endVertex, cost;
 
+          //Read edges
           while( counter<numberOfEdgesToAdd && ifs.good() )
             {
                char line[256];
                ifs.getline(line, 256);
-               //cout<<"Line is: "<<line<<endl;
+               //Get  start vertex, end vertex and cost
                pch = strtok(line, " ");
                if(pch != NULL)
                  startVertex = atoi(pch);
@@ -911,15 +909,15 @@ class Graph
                if(!present)
                  addEdge(startVertex, endVertex, cost);
                else
-                 { //cout<<"Edge already exists"<<endl;
+                 { cout<<"Edge already exists"<<endl;
                  }
 
                counter=counter+1;
-               //cout<<"Line no is: "<<counter;
             }
 
        }
 
+     //Print Graph
      void printGraph()
        {
           cout<<"Number of Vertices: "<<numberOfVertices<<endl;
@@ -945,6 +943,7 @@ class Graph
             cout<<"Number of edges in graph is: "<<count;
       }
 
+     //Returns true if node is present
      bool nodePresent(int node)
        {
          if( (*adjacencyList)[node] == NULL )
@@ -953,6 +952,7 @@ class Graph
            return true;
        }
 
+     //Compare two edge nodes
      bool compareAdjacencyNode(EdgeNode* first, EdgeNode* second)
        {
          return (first->sourceVertex==second->sourceVertex && first->destinationVertex==second->destinationVertex && first->weight == second->weight);
@@ -965,11 +965,10 @@ int main(int argc, char * argv[])
 {
    struct timeval st;
    struct timeval et;
-   struct timeval st1;
-   struct timeval et1;
-
    struct timezone tp;
+
    int noOfOptions = argc;
+
    if(argc < 2)
      {
         cout<<"No options to program. Exiting..";
@@ -989,55 +988,63 @@ int main(int argc, char * argv[])
               {
                  int numberOfVertices = atoi(argv[2]);
                  int density = atoi(argv[3]);
-                 cout<<numberOfVertices<<" "<<density;
+                 //cout<<numberOfVertices<<" "<<density;
+
+                 //Generate Graph until connected graph Obtained
                  Graph *g = new Graph(numberOfVertices);
                  g->generateRandomGraph(density);
-                 //clock_t start, end;
-                 //start = clock();
-                 //cout<<start<<endl;
+                 while(!g->graphConnectedOrNot())
+                   {
+                      cout<<"Graph not Connected: "<<endl;
+                      g->reAllocateListWithNewNumberOfVertices(numberOfVertices);
+                      g->generateRandomGraph(density);
+                   }
+
+                 //Minimum Spanning tree using Simple Scheme
                  gettimeofday(&st, &tp);
                  g->getMinimumSpanningTreeUsingPrimsSimpleScheme(" ");
                  gettimeofday(&et, &tp);
-                 int s,t;
-                 s=((et.tv_sec-st.tv_sec)*pow(10,6) + ((et.tv_usec-st.tv_usec)));
-                 cout<<s<<endl;
-                 //cout<<clock()<<endl;
-                 //cout<<clock()-start<<endl;
-                 //start = clock();
-                 //cout<<"time2:"<<endl;
-                 //cout<<start<<endl;
+                 int s=((et.tv_sec-st.tv_sec)*pow(10,6) + ((et.tv_usec-st.tv_usec)));
+                 cout<<"Time taken: "<<s<<" microseconds"<<endl<<endl<<endl;
+
+                 //Minimum Spanning tree using Fibonacci Scheme
                  gettimeofday(&st, &tp);
                  g->getMinimumSpanningTreeUsingPrimsFibonacciScheme(" ");
                  gettimeofday(&et, &tp);
-                 t=((et.tv_sec-st.tv_sec)*pow(10,6) + ((et.tv_usec-st.tv_usec)));
-                 cout<<t<<endl;
-                 cout<<(s-t);
-                 //cout<<clock()<<endl;
-                 //cout<<clock()-start<<endl;
-                 //g->printGraph();
+                 int t=((et.tv_sec-st.tv_sec)*pow(10,6) + ((et.tv_usec-st.tv_usec)));
+                 cout<<"Time taken: "<<t<<" microseconds"<<endl;
+
+                 //cout<<(s-t)<<endl;
+
               }
          }
        else if(firstOption == "-s")
          {
             string filePath = argv[2];
+
+            //Generate graph
             Graph *g = new Graph(0);
-            bool result = g->generateGraphFromFile(filePath);
+            g->generateGraphFromFile(filePath);
+
+            //Minimum Spanning tree using Simple Scheme
             gettimeofday(&st, &tp);
             g->getMinimumSpanningTreeUsingPrimsSimpleScheme("filePath");
             gettimeofday(&et, &tp);
-            cout<<((et.tv_sec-st.tv_sec)*pow(10,3) + ((et.tv_usec-st.tv_usec)/1000.00))<<endl;
-            //g->printGraph();
+            //cout<<((et.tv_sec-st.tv_sec)*pow(10,6) + ((et.tv_usec-st.tv_usec)))<<" microseconds"<<endl;
          }
        else if(firstOption == "-f")
          {
             string filePath = argv[2] ;
+
+            //Generate graph
             Graph *g = new Graph(0);
             bool result = g->generateGraphFromFile(filePath);
+
+            //Minimum Spanning tree using Fibonacci Scheme
             gettimeofday(&st, &tp);
             g->getMinimumSpanningTreeUsingPrimsFibonacciScheme("filepath");
             gettimeofday(&et, &tp);
-            cout<<((et.tv_sec-st.tv_sec)*pow(10,3) + ((et.tv_usec-st.tv_usec)/1000.00))<<endl;
-            //g->printGraph();
+            //cout<<((et.tv_sec-st.tv_sec)*pow(10,6) + ((et.tv_usec-st.tv_usec)))<<" microseconds"<<endl;
          }
        else
          {
@@ -1047,91 +1054,4 @@ int main(int argc, char * argv[])
      }
   return 0;
 
-/*
-   Graph g(5);
-   bool res;
-   res = g.addEdge(2,3,69);
-   if (res)
-     cout<<"true"<<endl;
-   res = g.addEdge(3,4,70);
-   if (res)
-     cout<<"true"<<endl;
-   res = g.addEdge(1,2,89);
-   if (res)
-     cout<<"true"<<endl;
-   //res = g.addEdge(0,4,89);
-   //if (res)
-     cout<<"true"<<endl;
-
-   g.printGraph();
-   cout<<endl<<"Graph Connected? : ";
-   if (g.graphConnectedOrNot() )
-      cout<<"Connected "<<endl;
-   else
-      cout<<"Not Connected"<<endl;
-
-*/
-   //return 0;
-
-/*
-   FibonacciHeap heap;
-   VertexKey *min;
-   int i=0;
-   srand(time(NULL));
-   while(i<1000)
-   {
-      int ran = (rand() % 2000)-1000;
-      heap.insert(new FibonacciHeapNode(new VertexKey(2,ran)));
-      i++;
-   }
-   i=0;
-   min = heap.removeMin();
-   while(min != NULL)
-     {  i++;
-        min = heap.removeMin();
-        if(min != NULL)
-          cout<<"MIn is: "<<min->key<<endl;
-     }
-  cout<<endl<<"i: "<<i;
-*/
-/*
-  FibonacciHeap heap;
-  VertexKey *min;
-  FibonacciHeapNode node1(new VertexKey(2,4));
-  heap.insert(&node1);
-  FibonacciHeapNode node2(new VertexKey(2,-3));
-  heap.insert(&node2);
-  FibonacciHeapNode node3(new VertexKey(2,-1));
-  heap.insert(&node3);
-  FibonacciHeapNode node4(new VertexKey(2,2));
-  heap.insert(&node4);
-  FibonacciHeapNode node5(new VertexKey(2,0));
-  heap.insert(&node5);
-  FibonacciHeapNode node6(new VertexKey(2,7));
-  heap.insert(&node6);
-  FibonacciHeapNode node7(new VertexKey(2,-2));
-  heap.insert(&node7);
-  FibonacciHeapNode node8(new VertexKey(2,9));
-  heap.insert(&node8);
-  FibonacciHeapNode node9(new VertexKey(2,1));
-  heap.insert(&node9);
-  heap.print();
-  min = heap.removeMin();
-  cout<<"MIN: "<<min->key<<endl;
-  heap.print();
-
-  heap.decreaseKey(&node8, -1);
-  heap.decreaseKey(&node9, -2);
-  heap.decreaseKey(&node1, -5);
-  heap.print();
-
-   min = heap.removeMin();
-   cout<<"MIn is: "<<min->key<<endl;
-   while(min != NULL)
-     {
-        min = heap.removeMin();
-        if(min != NULL)
-          cout<<"MIn is: "<<min->key<<endl;
-     }
-*/
 }
