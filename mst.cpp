@@ -183,7 +183,9 @@ class FibonacciHeap
      void combineListWithTopLevelList(FibonacciHeapNode *list)
        {
           if(list == NULL)
-            return;
+            {
+              return;
+            }
 
           //Find minimum key node in list
           FibonacciHeapNode *minPointer = minKeyNode(list, true, false);
@@ -196,7 +198,9 @@ class FibonacciHeap
 
           //Update min pointer
           if(minPointer->data->key < min->data->key)
-             min = minPointer;
+            {
+              min = minPointer;
+            }
        }
 
      //Removes minimum node and returns corresponding vertex and min key
@@ -392,6 +396,7 @@ class FibonacciHeap
       //Decrease Key of a node pointed by nodeToDecreaseKey to a value pointed by new key
       void decreaseKey(FibonacciHeapNode *nodeToDecreaseKey, int newKey)
         {
+
            if(nodeToDecreaseKey == NULL)
              {
                cout<<"Argument is null for descrease key: ..Exiting ";
@@ -410,7 +415,11 @@ class FibonacciHeap
 
            //If no parent exist than no min tree property violation and return.
            if(nodeToDecreaseKey->parent == NULL)
-              return;
+             {
+                if(min->data->key > nodeToDecreaseKey->data->key)
+                  min = nodeToDecreaseKey;
+                return;
+             }
 
            //If parent key is still smaller than decreased child than no min tree property violation and return.
            if( newKey >= nodeToDecreaseKey->parent->data->key )
@@ -605,10 +614,10 @@ class Graph
                   i++;
                 }
 
-             if(!lastFound && present)
+             if(!lastFound && (present || startVertex==endVertex) )
                tryWithNoChanges++;
 
-             if(lastFound && present)
+             if(lastFound && (present || startVertex==endVertex) )
                tryWithNoChanges=1;
 
              //If no edge add since 1000 continuous tries
@@ -618,7 +627,7 @@ class Graph
                  break;
                }
 
-             lastFound = !present;
+             lastFound = !present && startVertex!=endVertex;
           }
 
         //cout<<"Number Of Edges Added: "<<i<<endl;
@@ -629,6 +638,7 @@ class Graph
     bool addEdge(int startVertex, int endVertex, int cost)
        {
          edgePresentArray[startVertex][endVertex] = edgePresentArray[endVertex][startVertex] = true;
+         //cout<<startVertex<<" "<<endVertex<<endl;
 
          //Create edge node for adjacency list of start vertex and end vertex each
          EdgeNode *forStartVertexList = new EdgeNode(startVertex, endVertex, cost);
